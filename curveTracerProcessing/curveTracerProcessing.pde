@@ -1,15 +1,17 @@
 import processing.serial.*;
 
 Serial myPort;                       // The serial port
-boolean firstContact = false;        // Whether we've heard from the microcontroller
+boolean handshake = false;        // Whether we've heard from the microcontroller
 int[] serialInArray = new int[2];    // Where we'll put what we receive
-int serialCount = 0;                 // A count of how many bytes we receive
+int curvePointCount = 0;  // A count of how many bytes we receive
+int serialCount;
 int xpos, ypos;
 int xprev, yprev = 0;
 int offsetX = 10;
 int offsetY = 10;
 int sizeX = 266;
 int sizeY = 266;
+int curvePoints = 15;
 boolean newData = false;
 
 void generateCleanGraph()
@@ -59,18 +61,20 @@ void draw() {
 
 void serialEvent(Serial myPort) {
   int inByte = myPort.read();
-  if ((firstContact == false) && (inByte == 'A')) 
+  if ((handshake == false) && (inByte == 'A')) 
   {
     myPort.clear();         
-    firstContact = true;  
-    myPort.write('A'); 
+    handshake = true;  
+    myPort.write((byte)curvePoints); 
+    xprev = 0;
+    yprev = 0;
     return;
   } 
-  if(inByte != 'E')
+  else
   {
+    serialCount = curvePointCount%2;
     serialInArray[serialCount] = inByte;
-    serialCount++;
-    if (serialCount > 1 ) 
+    if (serialCount != 0) 
     {
       xpos = serialInArray[0];
       ypos = serialInArray[1];
@@ -78,10 +82,7 @@ void serialEvent(Serial myPort) {
       newData = true;
       serialCount = 0;
     }
+    curvePointCount++;
   }
-  else
-  {
-    xprev = 0;
-    yprev = 0;
-  }
+
 }
