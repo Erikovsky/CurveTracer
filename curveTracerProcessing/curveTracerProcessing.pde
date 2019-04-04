@@ -1,18 +1,22 @@
+//Electronics I Final Project
+//Tim Roche, Fowad Sohail, Nick Kabala
+
 import processing.serial.*;
 
 Serial myPort;                       // The serial port
-boolean handshake = false;        // Whether we've heard from the microcontroller
-int[] serialInArray = new int[2];    // Where we'll put what we receive
-int curvePointCount = 0;  // A count of how many bytes we receive
-int serialCount;
+String data;
+int[] values = new int[2];
 int xpos, ypos;
 int xprev, yprev = 0;
 int offsetX = 10;
 int offsetY = 10;
 int sizeX = 266;
 int sizeY = 266;
-int curvePoints = 15;
+int dataPoint = 0;
 boolean newData = false;
+boolean firstRun = true;
+boolean clearGraph = false;
+
 
 void generateCleanGraph()
 {
@@ -32,57 +36,75 @@ void drawLineInBounds(int xp,int yp,int x,int y)
   line(xp+offsetX,invert_yp-offsetY,x+offsetX,invert_y-offsetY);
 }
 
-
 void setup() {
   size(266, 266);  // Stage size
+  smooth();  
   noStroke();      // No border on the next thing drawn
-
-
-  // Print a list of the serial ports, for debugging purposes:
   printArray(Serial.list());
-
+  generateCleanGraph();
   String portName = Serial.list()[1];
   myPort = new Serial(this, portName, 9600);
-  generateCleanGraph();
+  myPort.bufferUntil('\n');
 }
 
-
-void draw() {
-   if(newData)
-   {
-     newData = false;
-     stroke(0);
-     strokeWeight(2);
-     drawLineInBounds(xprev,yprev,xpos,ypos);
-     xprev = xpos;
-     yprev = ypos;
-   }
-}
-
-void serialEvent(Serial myPort) {
-  int inByte = myPort.read();
-  if ((handshake == false) && (inByte == 'A')) 
+void draw() 
+{
+  if(newData)
   {
-    myPort.clear();         
-    handshake = true;  
-    myPort.write((byte)curvePoints); 
-    xprev = 0;
-    yprev = 0;
-    return;
-  } 
-  else
-  {
-    serialCount = curvePointCount%2;
-    serialInArray[serialCount] = inByte;
-    if (serialCount != 0) 
+    if(!firstRun)
     {
-      xpos = serialInArray[0];
-      ypos = serialInArray[1];
-      println(xpos + "\t" + ypos);
-      newData = true;
-      serialCount = 0;
+      stroke(0);
+      strokeWeight(2);
+      drawLineInBounds(xprev, yprev, values[0], values[1]);
+      newData = false;
     }
-    curvePointCount++;
+    else
+    {
+      firstRun = false;
+    }
+    xprev = values[0];
+    yprev = values[1];
   }
+  if(clearGraph)
+  {
+    generateCleanGraph();
+    clearGraph = false;
+  }
+}
 
+void serialEvent(Serial myPort) 
+{
+  try{
+    data = myPort.readStringUntil('\n');
+    data = trim(data);
+    println(data);
+    if(data == null)
+    {
+      return;
+    }
+    if(data.equals("E"))
+    {
+      clearGraph = true;
+      println("END");
+    }
+    if((data.equals("L"))||(data.equals("E")))
+    {
+      firstRun = true;
+      println("Reseting Run!!!!");  
+    }
+    else 
+    {
+        values = int(splitTokens(data, ",")); // delimiter can be comma space or tab
+        if (values.length == 2) 
+        {
+          //println(values[0] + "\t" + values[1]);  
+          newData = true;
+        }
+    }  
+  }  
+  catch(RuntimeException e) {
+    // only if there is an error:
+    e.printStackTrace();
+  }
+   
 }
