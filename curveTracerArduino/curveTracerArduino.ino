@@ -1,32 +1,31 @@
-#define BASE_STEPS 5 //amount of base currents OR gate voltages
-#define VCC_STEPS 5 //amount of VCC steps
-#define DAC_SIZE 8 //How many bits the dac is
-#define CRESISTOR 470;
-int sensorValue;
+#include <SPI.h>
+#include <MCP492X.h>
 
+#define PIN_SPI_CHIP_SELECT_DAC_TOP 10 // Or any pin you'd like to use
+#define PIN_SPI_CHIP_SELECT_DAC_BOT 9 // Or any pin you'd like to use
+
+MCP492X myDacTop(PIN_SPI_CHIP_SELECT_DAC_TOP);
+MCP492X myDacBot(PIN_SPI_CHIP_SELECT_DAC_BOT);
+
+bool odd = false;
+bool buffered = true;
+bool gain = true;
+bool active = true;
+unsigned int value_base = 10; 
+unsigned int value_collect = 2048; 
+float VCCr = 470;
 
 void setup() {
   // put your setup code here, to run once:
-  pinMode(2, OUTPUT);
-  pinMode(3, OUTPUT);
-  pinMode(4, OUTPUT);
-  pinMode(5, OUTPUT);
-  pinMode(6, OUTPUT);
-  pinMode(7, OUTPUT);
-  pinMode(8, OUTPUT);
-  pinMode(9, OUTPUT);
   Serial.begin(9600);
   sendEndOfGraph();
-  
-}
+  int sensorValue;
 
 
-void sendDataPoint(int x, int y)
-{
-  Serial.print(x);
-  Serial.print(",");
-  Serial.println(y);
+  myDacTop.begin();
+  myDacBot.begin();
 }
+
 
 void sendEndOfCurve()
 {
@@ -35,6 +34,7 @@ void sendEndOfCurve()
 
 void sendEndOfGraph()
 {
+  Serial.println();
   Serial.println("E");
 }
 
@@ -47,7 +47,6 @@ void mapToPins(int input)
   }
 }
 
-
 double convertReadingToVoltage(int reading)
 {
   double readDoub = (double)reading;
@@ -55,42 +54,39 @@ double convertReadingToVoltage(int reading)
   return(output);
 }
 
-double readVoltage()
+void debugPrint(float VCE, float ICE)
 {
-  double VCE = convertReadingToVoltage(analogRead(A0));
-  return (VCE); 
+    Serial.print("VOLTAGE: ");
+    Serial.print(VCE);
+    Serial.println(" Volts");
+    Serial.print("CURRENT: ");
+    Serial.print(ICE);
+    Serial.println(" uA");
 }
 
-double readCurrent()
+void sendOverSerial(float VCE, float ICE)
 {
-  int diff = analogRead(A0) - analogRead(A1);
-  double Vresistor = convertReadingToVoltage(diff);
-  double IC = Vresistor/470.0;
-  return(IC);
+  Serial.print(VCE);
+  Serial.print(",");
+  Serial.println(ICE);
 }
 
-void loop() {
- /*int totalSteps = pow(2,DAC_SIZE);
-  int baseStepSize = totalSteps/BASE_STEPS;
-  int vccStepSize = totalSteps/VCC_STEPS;
-
-  int maxVoltage = 9;
-  for(int vcc = 0; vcc < 200; vcc=vcc+2)
+void loop() 
+{
+  for(int value_base = 0; value_base < 4096; value_base = value_base + 256)
   {
-    mapToPins(254);
-    sensorValue = analogRead(A0);
-    sendDataPoint(vcc,sensorValue);
-    delay(100);
+    for(int value_collect = 0; value_collect < 4096; value_collect = value_collect + 32)
+    {
+      myDacTop.analogWrite(odd, buffered, gain, active, value_base);
+      myDacBot.analogWrite(odd, buffered, gain, active, value_collect);
+      float VCE = convertReadingToVoltage(analogRead(A0));
+      float VCC = convertReadingToVoltage(analogRead(A1));
+      float ICE = (VCC-VCE)*1000000/VCCr;
+      //debugPrint(VCE, ICE);
+      sendOverSerial(VCE, ICE);
+      delay(20);
+    }
+    delay(50);
+    sendEndOfCurve();
   }
-  sendEndOfCurve();*/
-  mapToPins(180);
- // Serial.println(analogRead(A0));
-  
-  Serial.print("VOLTAE: ");
-  Serial.println(readVoltage());
-  Serial.print("CURRENT: ");
-  Serial.println(readCurrent());
-  Serial.println("------");
-  delay(10);
-  
 }

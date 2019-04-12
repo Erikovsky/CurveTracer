@@ -1,6 +1,7 @@
 #include <SPI.h>
 #include <MCP492X.h>
 
+
 #define PIN_SPI_CHIP_SELECT_DAC_TOP 10 // Or any pin you'd like to use
 #define PIN_SPI_CHIP_SELECT_DAC_BOT 9 // Or any pin you'd like to use
 
@@ -18,8 +19,8 @@ void loop() {
   bool buffered = true;
   bool gain = true;
   bool active = true;
-  unsigned int value_top = 4000; 
-  unsigned int value_bottom = 2048; 
+  unsigned int value_top = 2048; 
+  unsigned int value_bottom = 1000; 
   // put your main code here, to run repeatedly:
 
   // Write any value from 0-4095
