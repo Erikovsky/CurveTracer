@@ -14,6 +14,7 @@ bool active = true;
 unsigned int value_base = 10; 
 unsigned int value_collect = 2048; 
 float VCCr = 470;
+float HCSresistor = 47000;
 
 void setup() {
   // put your setup code here, to run once:
@@ -71,6 +72,20 @@ void sendOverSerial(float VCE, float ICE)
   Serial.println(ICE);
 }
 
+float convertToBaseCurrent(int value_base)
+{
+  float baseVoltage = convertReadingToVoltage(value_base);
+  float baseCurrent = (baseVoltage*1000000)/HCSresistor;
+  return(baseCurrent);
+}
+
+void sendBaseCurrentAndEndCurve(float baseCurrent)
+{
+  Serial.print("L");
+  Serial.print(",");
+  Serial.println(baseCurrent);
+}
+
 void loop() 
 {
   for(int value_base = 0; value_base < 4096; value_base = value_base + 256)
@@ -86,7 +101,9 @@ void loop()
       sendOverSerial(VCE, ICE);
       delay(20);
     }
+    float base_current = convertToBaseCurrent(value_base);
+    sendBaseCurrentAndEndCurve(base_current);
     delay(50);
-    sendEndOfCurve();
+    
   }
 }

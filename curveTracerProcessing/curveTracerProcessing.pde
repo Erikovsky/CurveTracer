@@ -6,6 +6,7 @@ import processing.serial.*;
 Serial myPort;                       // The serial port
 String data;
 float[] values = new float[2];
+String[] endValue = new String[2];
 float xpos, ypos;
 float xprev, yprev = 0;
 float sizeX = 1000;
@@ -16,11 +17,14 @@ float sizeYComp = sizeY-offsetY;
 float sizeXComp = sizeX-offsetX;
 float maxY = 10000;
 float maxX = 5;
+String baseCurrent = "0";
 
 int dataPoint = 0;
 boolean newData = false;
 boolean firstRun = true;
 boolean clearGraph = false;
+boolean newBase = false;
+
 
 void generateCleanGraph()
 {
@@ -46,6 +50,7 @@ void drawLineInBounds(float xp,float yp,float x,float y)
 }
 
 void setup() {
+
   size(1000, 1000);  // Stage size
   smooth();  
   noStroke();      // No border on the next thing drawn
@@ -56,12 +61,29 @@ void setup() {
   myPort.bufferUntil('\n');
 }
 
+void writeBaseCurrent(String text, float x, float y)
+{
+  x = map(x, 0, maxX, offsetX, sizeXComp);
+  y = map(y, 0, maxY, offsetY, sizeYComp);
+  float invert_y = sizeY - y;
+  println("WRITING!");
+  fill(50);
+  textSize(26);
+  text = text + " uA";
+  text(text, x, invert_y);
+}
+
 void draw() 
 {
   try
   {
     if(newData)
     {
+      if(newBase)
+      {
+        writeBaseCurrent(baseCurrent, xprev, yprev);
+        newBase = false;
+      }
       if(!firstRun)
       {
         stroke(0);
@@ -101,14 +123,17 @@ void serialEvent(Serial myPort)
     if(data.equals("E"))
     {
       clearGraph = true;
+      firstRun = true;
       println("END");
     }
-    if((data.equals("L"))||(data.equals("E")))
-    {
+    if(data.charAt(0) == 'L')
+    { 
       firstRun = true;
-      println("Reseting Run!!!!");  
+      endValue = splitTokens(data, ","); // delimiter can be comma space or tab
+      newBase = true;
+      baseCurrent = endValue[1];
     }
-    else 
+    if(!((data.charAt(0) == 'L')||(data.equals("E")))) //If not either of those
     {
         values = float(splitTokens(data, ",")); // delimiter can be comma space or tab
         if (values.length == 2) 
