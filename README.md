@@ -7,4 +7,4 @@ Screenshots:
 ![IV curve of MOSFET][MOSFET]
 
 [BJT]: https://github.com/finnbarr1/CurveTracer/blob/master/Screenshots/BJTmode.png "Curve Trace of 2N3904 NPN transistor"
-[MOSFET]: https://github.com/finnbarr1/CurveTracer/blob/master/mosfetMODE.png "Curve Trace of 2N7000 n-channel MOSFET"
+[MOSFET]: https://github.com/finnbarr1/CurveTracer/blob/master/Screenshots/mosfetMODE.png "Curve Trace of 2N7000 n-channel MOSFET"
