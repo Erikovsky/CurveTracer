@@ -6,7 +6,7 @@ import processing.serial.*;
 Serial myPort;                       // The serial port
 String data;
 float[] values = new float[2];
-String[] endValue = new String[2];
+String[] endValue = new String[3];
 float xpos, ypos;
 float xprev, yprev = 0;
 float sizeX = 1000;
@@ -24,7 +24,7 @@ boolean newData = false;
 boolean firstRun = true;
 boolean clearGraph = false;
 boolean newBase = false;
-
+boolean MOSFETmode = false;
 
 void generateCleanGraph()
 {
@@ -33,6 +33,7 @@ void generateCleanGraph()
   strokeWeight(3);
   line(offsetX,offsetY,offsetX,sizeY-offsetY);
   line(offsetX,sizeY-offsetY,sizeX-offsetX,sizeY-offsetY);
+ 
 }
 
 void drawLineInBounds(float xp,float yp,float x,float y)
@@ -72,7 +73,14 @@ void writeBaseCurrent(String text, float x, float y)
   float invert_y = sizeY - y;
   fill(50);
   textSize(26);
-  text = text + " uA";
+  if(MOSFETmode)
+  {
+    text += " V";
+  }
+  else
+  {
+    text += " uA";
+  }
   text(text, x, invert_y);
     println("DONE WRITING!");
 }
@@ -135,12 +143,16 @@ void serialEvent(Serial myPort)
       println("END");
       return;
     }
+    println(data.charAt(0));
     if(data.charAt(0) == 'L')
     { 
       firstRun = true;
       endValue = splitTokens(data, ","); // delimiter can be comma space or tab
       newBase = true;
       baseCurrent = endValue[1];
+      MOSFETmode = boolean(parseInt(endValue[2]));
+      print("!!!!!!!!!!!!!!!!!!!!");
+      println(MOSFETmode);
       return;
     }
       values = float(splitTokens(data, ",")); // delimiter can be comma space or tab

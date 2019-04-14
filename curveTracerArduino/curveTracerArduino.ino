@@ -1,8 +1,10 @@
 #include <SPI.h>
 #include <MCP492X.h>
 
+
 #define PIN_SPI_CHIP_SELECT_DAC_TOP 10 // Or any pin you'd like to use
 #define PIN_SPI_CHIP_SELECT_DAC_BOT 9 // Or any pin you'd like to use
+#define MODEPIN 3
 
 MCP492X myDacTop(PIN_SPI_CHIP_SELECT_DAC_TOP);
 MCP492X myDacBot(PIN_SPI_CHIP_SELECT_DAC_BOT);
@@ -11,17 +13,21 @@ bool odd = false;
 bool buffered = true;
 bool gain = true;
 bool active = true;
+bool MOSFETmode = false;
 unsigned int value_base = 10; 
 unsigned int value_collect = 2048; 
 float VCCr = 470;
 float HCSresistor = 47000;
+int MOSFETinc = 64;
+int BJTinc = 256;
+int baseIncSelect;
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   sendEndOfGraph();
   int sensorValue;
-
+  pinMode(MODEPIN, INPUT);
 
   myDacTop.begin();
   myDacBot.begin();
@@ -78,17 +84,27 @@ double convertToBaseCurrent(int value_base)
   return(baseCurrent);
 }
 
-void sendBaseCurrentAndEndCurve(float baseCurrent)
+void sendBaseAndEndCurve(float baseCurrent, bool MOSFETmode)
 {
   Serial.print("L");
   Serial.print(",");
-  Serial.println(baseCurrent);
+  Serial.print(baseCurrent);
+  Serial.print(",");
+  Serial.println(MOSFETmode);
 }
-
 
 void loop() 
 {
-  for(int value_base = 0; value_base < 4096; value_base = value_base + 256)
+  MOSFETmode = digitalRead(MODEPIN);
+  if(MOSFETmode)
+  {
+    baseIncSelect = MOSFETinc;
+  }
+  else
+  {
+    baseIncSelect = BJTinc;
+  }
+  for(int value_base = 0; value_base < 4096; value_base = value_base + baseIncSelect)
   {
     for(int value_collect = 0; value_collect < 4095; value_collect = value_collect + 39)
     {
@@ -96,14 +112,23 @@ void loop()
       myDacBot.analogWrite(odd, buffered, gain, active, value_collect);
       double VCE = convertReadingToVoltage(analogRead(A0));
       double VCC = convertReadingToVoltage(analogRead(A1));
-      double ICE = (VCC-VCE)*1000000/VCCr;
+      double ICE = (VCC-VCE)*1000000/VCCr; //Puts current in uA
       //debugPrint(VCE, ICE);
       sendOverSerial(VCE, ICE);
       delay(20);
     }
     delay(10);
-    double base_current = convertToBaseCurrent(value_base);
-    sendBaseCurrentAndEndCurve(base_current);
+    double baseSendValue;
+    if(MOSFETmode)
+    {
+      baseSendValue = convertDACreadingToVoltage(value_base);
+    }
+    else
+    {
+      baseSendValue = convertToBaseCurrent(value_base);
+    }
+    sendBaseAndEndCurve(baseSendValue, MOSFETmode);
     delay(50);
   }
+  sendEndOfGraph();
 }
