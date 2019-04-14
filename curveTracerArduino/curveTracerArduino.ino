@@ -25,7 +25,6 @@ int baseIncSelect;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  sendEndOfGraph();
   int sensorValue;
   pinMode(MODEPIN, INPUT);
 
@@ -39,10 +38,11 @@ void sendEndOfCurve()
   Serial.println("L");
 }
 
-void sendEndOfGraph()
+void sendEndOfGraph(bool MOSFETmode)
 {
-  Serial.println();
-  Serial.println("E");
+  Serial.print("E");
+  Serial.print(",");
+  Serial.println(MOSFETmode);
 }
 
 double convertReadingToVoltage(int reading)
@@ -96,6 +96,7 @@ void sendBaseAndEndCurve(float baseCurrent, bool MOSFETmode)
 void loop() 
 {
   MOSFETmode = digitalRead(MODEPIN);
+  sendEndOfGraph(MOSFETmode);
   if(MOSFETmode)
   {
     baseIncSelect = MOSFETinc;
@@ -130,5 +131,4 @@ void loop()
     sendBaseAndEndCurve(baseSendValue, MOSFETmode);
     delay(50);
   }
-  sendEndOfGraph();
 }

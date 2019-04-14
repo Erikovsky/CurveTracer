@@ -207,8 +207,10 @@ void serialEvent(Serial myPort)
     {
       return;
     }
-    if(data.equals("E"))
+    if(data.charAt(0) == 'E')
     {
+      endValue = splitTokens(data, ","); // delimiter can be comma space or tab
+      MOSFETmode = boolean(parseInt(endValue[1]));
       clearGraph = true;  
       firstRun = true;
       println("END");
