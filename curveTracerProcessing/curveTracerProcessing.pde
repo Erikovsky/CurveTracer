@@ -94,7 +94,7 @@ void generateCleanGraph()
   fill(0);
   textSize(scaleText(26));
   translate(-((sizeY-offsetY)*0.5),offsetX*0.5);
-  text(additionalYText + "Current (mA)",0,0);
+  text(additionalYText + "Current (uA)",0,0);
   
   rotate(0);
   
