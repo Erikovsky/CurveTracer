@@ -39,21 +39,20 @@ void sendEndOfGraph()
   Serial.println("E");
 }
 
-void mapToPins(int input)
-{
-  byte bottom = ((byte)input);
-  for(int bitNum = 0; bitNum < 8; ++bitNum)
-  {
-    digitalWrite(bitNum+2, bitRead(bottom,bitNum));
-  }
-}
-
 double convertReadingToVoltage(int reading)
 {
   double readDoub = (double)reading;
   double output = (readDoub/1023)*5;
   return(output);
 }
+
+double convertDACreadingToVoltage(int reading)
+{ 
+  double readDoub = (double)reading;
+  double output = (readDoub/4096)*5;
+  return(output);
+}
+
 
 void debugPrint(float VCE, float ICE)
 {
@@ -72,10 +71,10 @@ void sendOverSerial(float VCE, float ICE)
   Serial.println(ICE);
 }
 
-float convertToBaseCurrent(int value_base)
+double convertToBaseCurrent(int value_base)
 {
-  float baseVoltage = convertReadingToVoltage(value_base);
-  float baseCurrent = (baseVoltage*1000000)/HCSresistor;
+  double baseVoltage = convertDACreadingToVoltage(value_base);
+  double baseCurrent = (baseVoltage*1000000)/HCSresistor;
   return(baseCurrent);
 }
 
@@ -86,24 +85,25 @@ void sendBaseCurrentAndEndCurve(float baseCurrent)
   Serial.println(baseCurrent);
 }
 
+
 void loop() 
 {
   for(int value_base = 0; value_base < 4096; value_base = value_base + 256)
   {
-    for(int value_collect = 0; value_collect < 4096; value_collect = value_collect + 32)
+    for(int value_collect = 0; value_collect < 4095; value_collect = value_collect + 39)
     {
       myDacTop.analogWrite(odd, buffered, gain, active, value_base);
       myDacBot.analogWrite(odd, buffered, gain, active, value_collect);
-      float VCE = convertReadingToVoltage(analogRead(A0));
-      float VCC = convertReadingToVoltage(analogRead(A1));
-      float ICE = (VCC-VCE)*1000000/VCCr;
+      double VCE = convertReadingToVoltage(analogRead(A0));
+      double VCC = convertReadingToVoltage(analogRead(A1));
+      double ICE = (VCC-VCE)*1000000/VCCr;
       //debugPrint(VCE, ICE);
       sendOverSerial(VCE, ICE);
       delay(20);
     }
-    float base_current = convertToBaseCurrent(value_base);
+    delay(10);
+    double base_current = convertToBaseCurrent(value_base);
     sendBaseCurrentAndEndCurve(base_current);
     delay(50);
-    
   }
 }

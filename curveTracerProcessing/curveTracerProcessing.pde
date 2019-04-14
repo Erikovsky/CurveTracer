@@ -37,6 +37,10 @@ void generateCleanGraph()
 
 void drawLineInBounds(float xp,float yp,float x,float y)
 {
+  print(yp);
+  print(" to ");
+  println(y);
+  
   //map(value, fromLow, fromHigh, toLow, toHigh)
   xp = map(xp, 0, maxX, offsetX, sizeXComp);
   yp = map(yp, 0, maxY, offsetY, sizeYComp);
@@ -56,7 +60,7 @@ void setup() {
   noStroke();      // No border on the next thing drawn
   printArray(Serial.list());
   generateCleanGraph();
-  String portName = Serial.list()[0];
+  String portName = Serial.list()[1];
   myPort = new Serial(this, portName, 9600);
   myPort.bufferUntil('\n');
 }
@@ -66,37 +70,41 @@ void writeBaseCurrent(String text, float x, float y)
   x = map(x, 0, maxX, offsetX, sizeXComp);
   y = map(y, 0, maxY, offsetY, sizeYComp);
   float invert_y = sizeY - y;
-  println("WRITING!");
   fill(50);
   textSize(26);
   text = text + " uA";
   text(text, x, invert_y);
+    println("DONE WRITING!");
 }
 
 void draw() 
 {
+  if(newBase)
+  {
+        writeBaseCurrent(baseCurrent, xprev, yprev);
+        newBase = false;
+  }
   try
   {
     if(newData)
     {
-      if(newBase)
-      {
-        writeBaseCurrent(baseCurrent, xprev, yprev);
-        newBase = false;
-      }
+      float xNow = values[0];
+      float yNow = values[1];
       if(!firstRun)
       {
         stroke(0);
         strokeWeight(2);
-        drawLineInBounds(xprev, yprev, values[0], values[1]);
-        newData = false;
+        drawLineInBounds(xprev, yprev, xNow, yNow);
       }
       else
       {
+        println("First Run I am skipping like I should!");
         firstRun = false;
       }
+    
       xprev = values[0];
       yprev = values[1];
+      newData = false;
     }
     if(clearGraph)
     {
@@ -122,9 +130,10 @@ void serialEvent(Serial myPort)
     }
     if(data.equals("E"))
     {
-      clearGraph = true;
+      clearGraph = true;  
       firstRun = true;
       println("END");
+      return;
     }
     if(data.charAt(0) == 'L')
     { 
@@ -132,16 +141,14 @@ void serialEvent(Serial myPort)
       endValue = splitTokens(data, ","); // delimiter can be comma space or tab
       newBase = true;
       baseCurrent = endValue[1];
+      return;
     }
-    if(!((data.charAt(0) == 'L')||(data.equals("E")))) //If not either of those
-    {
-        values = float(splitTokens(data, ",")); // delimiter can be comma space or tab
-        if (values.length == 2) 
-        {
-          //println(values[0] + "\t" + values[1]);  
-          newData = true;
-        }
-    }  
+      values = float(splitTokens(data, ",")); // delimiter can be comma space or tab
+      if (values.length == 2) 
+      {
+        //println(values[0] + "\t" + values[1]);  
+        newData = true;
+      } 
   }  
   catch(RuntimeException e) {
     // only if there is an error:
