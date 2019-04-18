@@ -18,7 +18,7 @@ unsigned int value_base = 10;
 unsigned int value_collect = 2048; 
 float VCCr = 470;
 float HCSresistor = 47000;
-int MOSFETinc = 64;
+int MOSFETinc = 82;
 int BJTinc = 256;
 int baseIncSelect;
 
@@ -30,6 +30,7 @@ void setup() {
 
   myDacTop.begin();
   myDacBot.begin();
+  sendEndOfCurve();                                                                                                                                               
 }
 
 
@@ -48,7 +49,7 @@ void sendEndOfGraph(bool MOSFETmode)
 double convertReadingToVoltage(int reading)
 {
   double readDoub = (double)reading;
-  double output = (readDoub/1023)*5;
+  double output = (readDoub/1023)*5;,M
   return(output);
 }
 
@@ -93,19 +94,9 @@ void sendBaseAndEndCurve(float baseCurrent, bool MOSFETmode)
   Serial.println(MOSFETmode);
 }
 
-void loop() 
+void makeCurve(float value_base, float maxBase, float baseIncSelect)
 {
-  MOSFETmode = digitalRead(MODEPIN);
-  sendEndOfGraph(MOSFETmode);
-  if(MOSFETmode)
-  {
-    baseIncSelect = MOSFETinc;
-  }
-  else
-  {
-    baseIncSelect = BJTinc;
-  }
-  for(int value_base = 0; value_base < 4096; value_base = value_base + baseIncSelect)
+  for(value_base; value_base < maxBase; value_base = value_base + baseIncSelect)
   {
     for(int value_collect = 0; value_collect < 4095; value_collect = value_collect + 39)
     {
@@ -129,6 +120,21 @@ void loop()
       baseSendValue = convertToBaseCurrent(value_base);
     }
     sendBaseAndEndCurve(baseSendValue, MOSFETmode);
-    delay(50);
   }
 }
+
+void loop() 
+{
+  MOSFETmode = digitalRead(MODEPIN);
+  sendEndOfGraph(MOSFETmode);
+  if(MOSFETmode)
+  {
+    makeCurve(0, 1, MOSFETinc);
+    makeCurve(820, 4096, MOSFETinc);  
+  }
+  else
+  {
+    makeCurve(0, 4096, BJTinc);
+  }
+  delay(50);
+ }

@@ -9,14 +9,16 @@ float[] values = new float[2];
 String[] endValue = new String[3];
 float xpos, ypos;
 float xprev, yprev = 0;
-float sizeX = 800;
-float sizeY = 800;
+float sizeX = 1000;
+float sizeY = 1000;
 float offsetX = (int)(sizeX*0.1);
 float offsetY = (int)(sizeY*0.1);
 float sizeYComp = sizeY-offsetY;
 float sizeXComp = sizeX-offsetX;
 float maxY = 10000;
 float maxX = 5;
+float yThresh = 10; //uV
+
 String baseCurrent = "0";
 String titleText = "IV Curve Tracer";
 String creditText = "Tim Roche, Fowad Sohail, Nick Kabala: Electronics I Final Project";
@@ -120,12 +122,12 @@ void drawLineInBounds(float xp,float yp,float x,float y)
 
 void setup() {
 
-  size(800, 800);  // Stage size
+  size(1000, 1000);  // Stage size
   smooth();  
   noStroke();      // No border on the next thing drawn
   printArray(Serial.list());
   generateCleanGraph();
-  String portName = Serial.list()[1];
+  String portName = Serial.list()[0];
   myPort = new Serial(this, portName, 9600);
   myPort.bufferUntil('\n');
 }
@@ -153,7 +155,7 @@ void writeBaseCurrent(String text, float x, float y)
     text += " uA";
   }
   text(text, x, invert_y);
-    println("DONE WRITING!");
+  println("DONE WRITING!");
 }
 
 void draw() 
