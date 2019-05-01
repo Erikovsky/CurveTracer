@@ -13,7 +13,7 @@ bool odd = false;
 bool buffered = true;
 bool gain = true;
 bool active = true;
-bool MOSFETmode = false;
+bool MOSFETmode = false; 
 unsigned int value_base = 10; 
 unsigned int value_collect = 2048; 
 float VCCr = 470;
@@ -49,7 +49,7 @@ void sendEndOfGraph(bool MOSFETmode)
 double convertReadingToVoltage(int reading)
 {
   double readDoub = (double)reading;
-  double output = (readDoub/1023)*5;,M
+  double output = (readDoub/1023)*5;
   return(output);
 }
 
